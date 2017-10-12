@@ -36,8 +36,12 @@ Go to \Pkcs11Wrapper\examples\src\demo\pkcs\pkcs11\wrapper\signatures\as\ for th
 **Usage-**
 
 Go to \Pkcs11Wrapper\examples\ and open index.html.
+Fill the form and with your token plugged in click on 'sign' button.
+Allow the applet to execute.
+What you would now have is the signature and the signer's details. 
 
-PS- None of latest versions of firefox/chrome/safari/IE supports applets. please install the applet supported versions of respective browsers to execute the program correctly. You must also need to plug in the smart card that supports pkcs11. 
+
+PS- None of latest versions of firefox/chrome/safari/IE supports applets. please install the applet supported versions of respective browsers to execute the program correctly. You must also need to plug in the smart card/token that supports pkcs11. 
 
 ## Pkcs 12 PDF Signer
 
@@ -45,4 +49,6 @@ pkcs 12 pdf signer is a JS based pkcs 12 signer.
 
 **Usage-**
 
-Open the sign2.html and eneter the data. Also provide the path to your p12 cerificate in your system. click "Sign Document" and it will download a signed pdf.  
+Open the sign2.html and enter the data. 
+Also provide the path to your p12 cerificate in your system. 
+Click "Sign Document" and it will download a signed pdf.  
