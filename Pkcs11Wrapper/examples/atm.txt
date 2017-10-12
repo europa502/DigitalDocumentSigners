@@ -1,0 +1,2 @@
+Permissions: all-permissions
+Application-Name: file:/C:/Users/abhi/Downloads/iaikPkcs11Wrapper/examples/SignRawData.jar

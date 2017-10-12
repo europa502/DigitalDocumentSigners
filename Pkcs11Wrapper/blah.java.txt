@@ -1,0 +1,13 @@
+ public class SmartCardTutorial {  
+   private Module pkcs11Module;  
+   public SmartCardTutorial(String librarayPath) {  
+     try {  
+       pkcs11Module = Module.getInstance(librarayPath);  
+       pkcs11Module.initialize(null);  
+     } catch (IOException ex) {  
+       Logger.getLogger(SmartCardTutorial.class.getName()).log(Level.SEVERE, null, ex);  
+     } catch (TokenException ex) {  
+       Logger.getLogger(SmartCardTutorialclass.getName()).log(Level.SEVERE, null, ex);  
+     }  
+   }  
+ }  

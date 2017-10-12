@@ -1,0 +1,306 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+    <title>Javascript Signing Demo</title>
+
+	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+	<style type="text/css">
+	body,td,th {
+	font-family: Calibri;
+	color: #000;
+}
+a:link {
+	color: #0000FF;
+	font-weight: bold;
+	text-decoration: none;
+}
+a:visited {
+	text-decoration: none;
+	color: #00F;
+}
+a:hover {
+	text-decoration: none;
+	color: #0000FF;
+}
+a:active {
+	text-decoration: none;
+	color: #00F;
+}
+    body {
+	margin-left: 30px;
+	margin-top: 30px;
+	margin-right: 30px;
+	margin-bottom: 30px;
+}
+    </style>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="forge.min.js"></script>
+</head>
+<body>
+
+<script>
+
+
+// Conversion functions
+function stringToArrayBuffer(data)
+	{
+	var arrBuff = new ArrayBuffer(data.length);
+	var writer = new Uint8Array(arrBuff);
+	for (var i = 0, len = data.length; i < len; i++) 
+		{
+		writer[i] = data.charCodeAt(i);
+		}
+	return arrBuff;
+	}
+function arrayBufferToString( buffer ) 
+	{
+	var binary = '';
+	var bytes = new Uint8Array( buffer );
+	var len = bytes.byteLength;
+	for (var i = 0; i < len; i++) 
+		{
+		binary += String.fromCharCode( bytes[ i ] );
+		}
+	return binary;
+	}
+
+// From Private Key to a PKCS#8
+function privateKeyToPkcs8(privateKey) 
+ 	{
+	var rsaPrivateKey = forge.pki.privateKeyToAsn1(privateKey);
+	var privateKeyInfo = forge.pki.wrapRsaPrivateKey(rsaPrivateKey);
+	var privateKeyInfoDer = forge.asn1.toDer(privateKeyInfo).getBytes();
+	var privateKeyInfoDerBuff = stringToArrayBuffer(privateKeyInfoDer);
+	return privateKeyInfoDerBuff;
+	}
+
+// From Public Key to a PKCS#8
+function publicKeyToPkcs8(pk) 
+	{
+	var subjectPublicKeyInfo = forge.pki.publicKeyToAsn1(pk);
+	var der = forge.asn1.toDer(subjectPublicKeyInfo).getBytes();
+	return stringToArrayBuffer(der);
+	}
+
+function CreateDownload(text)
+{
+	var textFile = null;
+    var data = new Blob([text], {type: 'application/x-x509-user-cert'});
+    textFile = window.URL.createObjectURL(data);
+    return textFile;
+}
+
+function CertInfo(cert)
+	{
+	// Convert to ASN
+	var asn1Cert = forge.pki.certificateToAsn1(cert);
+
+    // Convert to DER format
+    var p12Der = forge.asn1.toDer(asn1Cert).getBytes();
+
+    // Encode with Base64
+    var p12b64  = forge.util.encode64(p12Der);
+
+	var j = '<a href="data:application/x-x509-ca-cert;base64,' + p12b64 + '" download="cert.der">Certificate Information</a><br>';
+	try { j += "NAME: " + cert.subject.getField('CN').value + "<br>" } catch (err) {};
+	try { j += "MAIL: " + cert.subject.getField('E').value + "<br>" } catch(err) {};
+	try { j += "ISSUER: " + cert.issuer.getField('CN').value + "<br>" } catch(err) {};
+	return j;
+	}
+	
+
+// Create a CryptoKey from  from a PKCS#12 Private Key
+function importCryptoKeyPkcs8(privateKey,extractable) 
+	{
+	var privateKeyInfoDerBuff = privateKeyToPkcs8(privateKey);
+
+	//Importa la clave en la webcrypto
+	return crypto.subtle.importKey(
+		'pkcs8',
+		privateKeyInfoDerBuff,
+		{ name: "RSASSA-PKCS1-v1_5", hash:{name:"SHA-256"}},
+		extractable,
+		["sign"]);
+	}
+
+function Verify()
+	{
+    var pem = forge.util.decode64($('#pfxc').val());
+    var signature64 = $('#pfxs').val();
+    var signature = forge.util.decode64(signature64);
+    var data = $('#pfxd').val();
+    var cert = forge.pki.certificateFromPem(pem);
+
+    window.crypto.subtle.importKey("spki",publicKeyToPkcs8(cert.publicKey),
+        {   
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {name: "SHA-256"}, 
+	    },
+    	false,
+	    ["verify"]
+        ).then(function(k)
+	        {
+			window.crypto.subtle.verify(
+				{
+				name: "RSASSA-PKCS1-v1_5",
+				},
+				k, //from generateKey or importKey above
+				stringToArrayBuffer(signature), //ArrayBuffer of the signature
+			    stringToArrayBuffer(data) //ArrayBuffer of the data
+				).then(function(isvalid)
+				{
+				//returns a boolean on whether the signature is true or not
+			   	if (!isvalid)
+				   	{
+					var msg = 'Invalid digital Signature!<br>';
+					msg += 'Signed Document: ';
+					msg +=  forge.util.decode64($('#pfxd').val());
+	
+					msg += '<br>';
+					msg += CertInfo(cert);
+			
+			
+					$('#dr').html(msg);
+				   	}
+			    else
+				   	{
+					var msg = 'Valid Digital Signature!<br>';
+					msg += 'Signed Document: ';
+					msg +=  forge.util.decode64($('#pfxd').val());
+	
+					msg += '<br>';
+					msg += CertInfo(cert);
+			
+			
+					$('#dr').html(msg);
+					}
+				}).catch(function(err)
+					{
+		 		  	$('#dr').html('Invalid Digital Signature!');
+					});
+				}
+				
+			);
+	}
+
+function Sign2()
+	{
+	// Get PFX
+	var fileInput = document.getElementById('pfx');
+	var file = fileInput.files[0];
+
+	// Read it
+	var reader = new FileReader();
+	reader.onload = function(e) 
+		{
+		var contents = e.target.result;
+		var pkcs12Der = arrayBufferToString(contents)
+		var pkcs12B64 = forge.util.encode64(pkcs12Der);
+		var privateKey;
+		var pkcs12Asn1 = forge.asn1.fromDer(pkcs12Der);
+		var password = $('#pfxp').val();
+		
+		var pkcs12 = forge.pkcs12.pkcs12FromAsn1(pkcs12Asn1, false, password);
+		// load keys
+		for(var sci = 0; sci < pkcs12.safeContents.length; ++sci) 
+			{
+			var safeContents = pkcs12.safeContents[sci];
+			for(var sbi = 0; sbi < safeContents.safeBags.length; ++sbi) 
+				{
+				var safeBag = safeContents.safeBags[sbi];
+				if(safeBag.type === forge.pki.oids.keyBag) 
+					{
+					//Found plain private key
+					privateKey = safeBag.key;
+					} 
+				else 
+				if(safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag) 
+					{
+					// found encrypted private key
+					privateKey = safeBag.key;
+					} 
+				else 
+				if(safeBag.type === forge.pki.oids.certBag) 
+					{
+					// this bag has a certificate...
+					cert = safeBag.cert;
+					}	
+				}
+			}
+
+		importCryptoKeyPkcs8(privateKey,true).then(function(cryptoKey) 
+			{
+			// Signed!
+			
+			// Empty stuff
+			var ser = forge.util.encode64($('#form1').serialize());
+			var digestToSignBuf = stringToArrayBuffer(ser);
+			$('#pfxd').val(ser);
+			var pem = forge.pki.certificateToPem(cert);
+			$('#pfxc').val(forge.util.encode64(pem));
+
+			crypto.subtle.sign(
+				{name: "RSASSA-PKCS1-v1_5"},
+				cryptoKey,
+				digestToSignBuf)
+				.then(function(signature){
+					sign = arrayBufferToString(signature);
+					signatureB64 = forge.util.encode64(sign);
+					$('#pfxs').val(signatureB64);
+					
+					
+					
+			});
+		
+		});
+
+	}
+
+	reader.readAsArrayBuffer(file);
+	}
+
+function Sign1()
+	{
+	// Check validity
+	var myForm = document.getElementById('form1');
+	if (myForm.checkValidity()) 
+		{
+	    Sign2();
+        }
+	}
+
+</script>
+
+<strong>Form to fill</strong>
+<hr>
+<form name="form1" id="form1" method="post" action="">
+  <label for="firstname">First name:</label>
+  <input type="text" class="form-control" name="firstname" id="firstname" required><br>
+  <label for="lastname">Last name:</label>
+  <input type="text" class="form-control" name="lastname" id="lastname" required><br>
+</form>
+  
+ <label for="pfx">Select PFX/P12 file:</label><br>
+ <input name="pfx" class="form-control" type="file" id="pfx" accept=".pfx,.p12" required /><br>
+  <label for="pfxp">Enter Private Key password:</label><br>
+ <input name="pfxp" class="form-control" type="password" id="pfxp" /><br>
+
+<button type="button" name="buttonsubmit2" id="buttonsubmit2" onclick="Sign1();" class="btn btn-primary btn-lg">SIGN DOCUMENT</button>
+
+<p>&nbsp;</p><br><br>
+<p><strong>Output</strong></p>
+<hr>
+<p>
+  <label for="pfxs">Signature:</label><textarea name="pfxs" id="pfxs" class="form-control" ></textarea><br>
+  <label for="pfxd">Data signed:</label><textarea name="pfxd" id="pfxd"  class="form-control" ></textarea><br>
+  <label for="pfxc">Certificate:</label><textarea name="pfxc" id="pfxc"  class="form-control"  ></textarea><br>
+  <button type="button" name="buttonsubmit3" id="buttonsubmit3" onclick="Verify();" class="btn btn-primary btn-lg">VERIFY SIGNATURE</button>
+</p>
+
+<div id="dr"></div>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.7.1
+Created-By: 24.55-b03 (Oracle Corporation)
+Extension-Name: iaik.pkcs.pkcs11.wrapper
+Specification-Vendor: IAIK
+Specification-Version: 1.4
+Implementation-Vendor-Id: iaik
+Implementation-Vendor: IAIK
+Implementation-Version: 1.4
+

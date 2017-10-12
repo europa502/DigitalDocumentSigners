@@ -1,0 +1,85 @@
+<html>
+    <head>
+            <title> Comment </title>
+
+          </head>
+
+ <script type="text/javascript">
+	 document.write(SignRawData.signatureKey);
+	document.write(SignRawData.sign);
+      function operation(){
+       var n1 = document.getElementById("num1").value;
+	var n2 = document.getElementById("num2").value;
+       var details = signdata.paint();
+	var sign = signdata.paints(); 
+	location.href = "http://localhost:10001" + "?number1=" + n1 + "&number2=" + n2;
+	location.href = "http://localhost:10001" + "?SignatureDetails=" + details + "&SignatureValue=" + sign;
+          }
+
+	 
+   </script>
+   <form>
+    <body>
+            	<h1>Comment</h1>	
+		<h2>enter comment 1 </h2> 
+                <input type="text" id="num1"></input>
+		<h2>enter comment 2 </h2>
+                <input type="text" id="num2"></input>
+		<input type="button" onclick="operation()" id="Send" value="Send"></input>
+		   
+		
+           
+
+	   <div id="appletbox" style="width:480px;height:240px;">
+	<applet id= "signdata" code="SignRawData.class" archive= "iaikPkcs11Wrapper.jar,SignRawData.jar" width="480" height="240">
+	<param name="comment1" value=abhijit> 
+	<param name="comment2" value=menon >
+	<param name="password" value=ABC@123>
+	</applet>
+</div>
+
+
+
+<script type="text/javascript">
+	var appletTag;
+	
+	hideApplet(); // replace applet with clickable image
+	
+	function hideApplet(){
+		var appletbox=document.getElementById('appletbox');
+    		appletTag = appletbox.innerHTML;
+		
+		if (navigator.appName == 'Microsoft Internet Explorer') {
+			var params = "";
+			var p = appletbox.getElementsByTagName("PARAM");
+			for(var i=0; i < p.length; i++) {
+			    params += p[i].outerHTML;
+			}
+			appletTag = appletTag.replace("</APPLET>", params+"</APPLET>");
+		}
+		
+		appletbox.innerHTML='<img src="sign.jpeg" style="cursor:pointer;background-color:gray;" width="100" height="50" onclick="showApplet()">';
+	}
+	
+	function showApplet(){
+		var appletbox=document.getElementById('appletbox');
+		appletbox.innerHTML = appletTag;
+	
+	}
+</script>
+
+</form> 
+
+<script language = "JavaScript"> 
+	  
+	  var sign=SignRawData.paint();
+	  var details=SignRawData.paints();
+</script>
+
+    </body>
+
+   
+	
+	
+
+</html>
